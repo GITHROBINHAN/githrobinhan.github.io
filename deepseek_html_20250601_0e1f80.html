@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIOSH提举方程教学工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .animation-container {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            position: relative;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #eee;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .recommendation {
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .safe {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .caution {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        .danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .comparison-chart {
+            height: 300px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NIOSH提举方程教学工具</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('calculator')">计算器</div>
+            <div class="tab" onclick="switchTab('theory')">理论背景</div>
+            <div class="tab" onclick="switchTab('animation')">3D动画</div>
+            <div class="tab" onclick="switchTab('analysis')">分析工具</div>
+        </div>
+        
+        <div id="calculator" class="tab-content active">
+            <div class="section">
+                <h2>NIOSH提举方程计算器</h2>
+                <p>NIOSH提举方程用于评估手工提举任务的风险，并计算推荐重量限值(RWL)和提举指数(LI)。</p>
+                
+                <div class="grid">
+                    <div>
+                        <h3>提举参数</h3>
+                        <div class="form-group">
+                            <label for="weight">物体重量 (kg):</label>
+                            <input type="number" id="weight" min="0" step="0.1" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="horizontal">水平距离 (H, cm):</label>
+                            <input type="number" id="horizontal" min="0" step="1" value="25">
+                        </div>
+                        <div class="form-group">
+                            <label for="vertical">垂直高度 (V, cm):</label>
+                            <input type="number" id="vertical" min="0" step="1" value="75">
+                        </div>
+                        <div class="form-group">
+                            <label for="distance">垂直位移 (D, cm):</label>
+                            <input type="number" id="distance" min="0" step="1" value="30">
+                        </div>
+                        <div class="form-group">
+                            <label for="frequency">提举频率 (次/分钟):</label>
+                            <input type="number" id="frequency" min="0" step="0.1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="duration">持续时间:</label>
+                            <select id="duration">
+                                <option value="1">≤1小时</option>
+                                <option value="0.85">≤2小时</option>
+                                <option value="0.75">≤8小时</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3>其他因素</h3>
+                        <div class="form-group">
+                            <label for="coupling">抓握条件:</label>
+                            <select id="coupling">
+                                <option value="1">良好</option>
+                                <option value="0.95">一般</option>
+                                <option value="0.9">较差</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="asymmetry">不对称角度 (A, 度):</label>
+                            <input type="number" id="asymmetry" min="0" max="135" step="1" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="origin">提举起始位置:</label>
+                            <select id="origin">
+                                <option value="1">站立或蹲姿</option>
+                                <option value="0.9">跪姿</option>
+                                <option value="0.85">坐姿</option>
+                                <option value="0.8">受限姿势</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="calculateNIOSH()">计算</button>
+                
+                <div id="results" class="result" style="display:none;">
+                    <h3>计算结果</h3>
+                    <p><strong>推荐重量限值 (RWL):</strong> <span id="rwl"></span> kg</p>
+                    <p><strong>提举指数 (LI):</strong> <span id="li"></span></p>
+                    <div id="recommendation" class="recommendation"></div>
+                    
+                    <div class="comparison-chart">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="theory" class="tab-content">
+            <div class="section">
+                <h2>NIOSH提举方程理论背景</h2>
+                <p>NIOSH提举方程是由美国国家职业安全与健康研究所(NIOSH)开发的一种工具，用于评估手工提举任务的风险。该方程考虑了多个生物力学和生理因素，以确定特定提举任务的推荐重量限值(RWL)。</p>
+                
+                <h3>基本方程</h3>
+                <p>推荐重量限值(RWL)的计算公式为：</p>
+                <p>RWL = LC × HM × VM × DM × AM × FM × CM</p>
+                
+                <h3>各参数说明</h3>
+                <ul>
+                    <li><strong>LC (负荷常数):</strong> 23kg (51磅)，代表理想条件下的最大推荐重量</li>
+                    <li><strong>HM (水平系数):</strong> 考虑物体与身体中线的水平距离</li>
+                    <li><strong>VM (垂直系数):</strong> 考虑提举起始点的垂直高度</li>
+                    <li><strong>DM (位移系数):</strong> 考虑提举的垂直位移距离</li>
+                    <li><strong>AM (不对称系数):</strong> 考虑提举时的身体扭转角度</li>
+                    <li><strong>FM (频率系数):</strong> 考虑提举频率和持续时间</li>
+                    <li><strong>CM (抓握系数):</strong> 考虑抓握条件的好坏</li>
+                </ul>
+                
+                <h3>提举指数(LI)</h3>
+                <p>提举指数是实际提举重量与推荐重量限值的比值：</p>
+                <p>LI = 实际重量 / RWL</p>
+                <p>LI ≤ 1表示风险较低，LI > 1表示风险增加，需要采取措施降低风险。</p>
+                
+                <h3>应用限制</h3>
+                <p>NIOSH提举方程适用于以下条件：</p>
+                <ul>
+                    <li>双手对称提举</li>
+                    <li>平稳提举动作</li>
+                    <li>站立或有限移动的工作姿势</li>
+                    <li>温度适宜的环境</li>
+                    <li>无突然移动或震动</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div id="animation" class="tab-content">
+            <div class="section">
+                <h2>3D提举动作模拟</h2>
+                <p>调整下方参数查看不同提举姿势的生物力学影响。</p>
+                
+                <div class="grid">
+                    <div>
+                        <div class="form-group">
+                            <label for="anim-horizontal">水平距离 (cm):</label>
+                            <input type="range" id="anim-horizontal" min="15" max="60" value="25" oninput="updateAnimation()">
+                            <span id="anim-horizontal-value">25</span> cm
+                        </div>
+                        <div class="form-group">
+                            <label for="anim-vertical">垂直高度 (cm):</label>
+                            <input type="range" id="anim-vertical" min="0" max="120" value="75" oninput="updateAnimation()">
+                            <span id="anim-vertical-value">75</span> cm
+                        </div>
+                        <div class="form-group">
+                            <label for="anim-asymmetry">不对称角度 (度):</label>
+                            <input type="range" id="anim-asymmetry" min="0" max="90" value="0" oninput="updateAnimation()">
+                            <span id="anim-asymmetry-value">0</span>°
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label for="anim-posture">起始姿势:</label>
+                            <select id="anim-posture" onchange="updateAnimation()">
+                                <option value="standing">站立</option>
+                                <option value="squat">蹲姿</option>
+                                <option value="kneeling">跪姿</option>
+                                <option value="sitting">坐姿</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="anim-weight">物体重量 (kg):</label>
+                            <input type="range" id="anim-weight" min="0" max="30" value="10" oninput="updateAnimation()">
+                            <span id="anim-weight-value">10</span> kg
+                        </div>
+                        <div class="form-group">
+                            <label for="anim-coupling">抓握条件:</label>
+                            <select id="anim-coupling" onchange="updateAnimation()">
+                                <option value="good">良好</option>
+                                <option value="fair">一般</option>
+                                <option value="poor">较差</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="animation-container" class="animation-container"></div>
+                
+                <div class="result">
+                    <h3>生物力学分析</h3>
+                    <p><strong>腰椎压力:</strong> <span id="lumbar-pressure">中等</span></p>
+                    <p><strong>肩部负荷:</strong> <span id="shoulder-load">中等</span></p>
+                    <p><strong>膝关节角度:</strong> <span id="knee-angle">正常</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="analysis" class="tab-content">
+            <div class="section">
+                <h2>提举任务分析工具</h2>
+                <p>使用此工具分析不同参数对RWL的影响。</p>
+                
+                <div class="form-group">
+                    <label for="analysis-param">分析参数:</label>
+                    <select id="analysis-param" onchange="updateAnalysis()">
+                        <option value="horizontal">水平距离</option>
+                        <option value="vertical">垂直高度</option>
+                        <option value="distance">垂直位移</option>
+                        <option value="frequency">提举频率</option>
+                        <option value="asymmetry">不对称角度</option>
+                    </select>
+                </div>
+                
+                <div class="animation-container">
+                    <canvas id="analysisChart"></canvas>
+                </div>
+                
+                <div class="result">
+                    <h3>分析结果</h3>
+                    <p id="analysis-conclusion">水平距离增加会显著降低推荐重量限值(RWL)。当水平距离超过50cm时，RWL会急剧下降。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let scene, camera, renderer, worker, box, floor, controls;
+        let animationChart, comparisonChart, analysisChart;
+        
+        // 页面加载时初始化
+        window.onload = function() {
+            initAnimation();
+            initAnalysisChart();
+        };
+        
+        // 切换标签页
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // 调整3D动画大小
+            if(tabId === 'animation') {
+                setTimeout(() => {
+                    onWindowResize();
+                }, 100);
+            }
+        }
+        
+        // 计算NIOSH提举方程
+        function calculateNIOSH() {
+            // 获取输入值
+            const weight = parseFloat(document.getElementById('weight').value);
+            const H = parseFloat(document.getElementById('horizontal').value);
+            const V = parseFloat(document.getElementById('vertical').value);
+            const D = parseFloat(document.getElementById('distance').value);
+            const F = parseFloat(document.getElementById('frequency').value);
+            const A = parseFloat(document.getElementById('asymmetry').value);
+            
+            // 获取选择值
+            const duration = parseFloat(document.getElementById('duration').value);
+            const coupling = parseFloat(document.getElementById('coupling').value);
+            const origin = parseFloat(document.getElementById('origin').value);
+            
+            // 计算各系数
+            const LC = 23; // 负荷常数
+            
+            // 水平系数
+            const HM = Math.min(25 / H, 1);
+            
+            // 垂直系数
+            const VM = 1 - (0.003 * Math.abs(V - 75));
+            
+            // 位移系数
+            const DM = 0.82 + (4.5 / D);
+            if (D > 175) DM = 0.82 + (4.5 / 175);
+            
+            // 不对称系数
+            const AM = 1 - (0.0032 * A);
+            
+            // 频率系数
+            let FM;
+            if (F <= 0.2) FM = 1;
+            else if (F <= 0.5) FM = 0.97;
+            else if (F <= 1) FM = 0.94;
+            else if (F <= 2) FM = 0.91;
+            else if (F <= 3) FM = 0.88;
+            else if (F <= 4) FM = 0.84;
+            else if (F <= 5) FM = 0.8;
+            else if (F <= 6) FM = 0.75;
+            else if (F <= 7) FM = 0.7;
+            else if (F <= 8) FM = 0.6;
+            else if (F <= 9) FM = 0.52;
+            else if (F <= 10) FM = 0.45;
+            else if (F <= 11) FM = 0.41;
+            else if (F <= 12) FM = 0.37;
+            else if (F <= 13) FM = 0.34;
+            else if (F <= 14) FM = 0.31;
+            else if (F <= 15) FM = 0.28;
+            else FM = 0;
+            
+            // 持续时间系数
+            FM = FM * duration;
+            
+            // 计算RWL
+            const RWL = LC * HM * VM * DM * AM * FM * coupling * origin;
+            
+            // 计算LI
+            const LI = weight / RWL;
+            
+            // 显示结果
+            document.getElementById('rwl').textContent = RWL.toFixed(2);
+            document.getElementById('li').textContent = LI.toFixed(2);
+            document.getElementById('results').style.display = 'block';
+            
+            // 显示建议
+            const recommendation = document.getElementById('recommendation');
+            recommendation.className = 'recommendation';
+            
+            if (LI <= 1) {
+                recommendation.textContent = '此提举任务风险较低。';
+                recommendation.classList.add('safe');
+            } else if (LI <= 3) {
+                recommendation.textContent = '此提举任务存在中等风险，建议采取措施降低风险。';
+                recommendation.classList.add('caution');
+            } else {
+                recommendation.textContent = '此提举任务风险很高，必须立即采取措施降低风险。';
+                recommendation.classList.add('danger');
+            }
+            
+            // 更新比较图表
+            updateComparisonChart(weight, RWL);
+        }
+        
+        // 更新比较图表
+        function updateComparisonChart(actualWeight, rwl) {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['实际重量', '推荐重量限值(RWL)'],
+                    datasets: [{
+                        label: '重量 (kg)',
+                        data: [actualWeight, rwl],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '重量 (kg)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '实际重量与推荐重量限值比较'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化3D动画
+        function initAnimation() {
+            const container = document.getElementById('animation-container');
+            
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+            
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 100, 200);
+            
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            
+            // 添加光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(0, 100, 50);
+            scene.add(directionalLight);
+            
+            // 添加网格地面
+            const gridHelper = new THREE.GridHelper(200, 20, 0x888888, 0xcccccc);
+            scene.add(gridHelper);
+            
+            // 添加坐标轴
+            const axesHelper = new THREE.AxesHelper(50);
+            scene.add(axesHelper);
+            
+            // 创建工人模型
+            createWorker();
+            
+            // 创建箱子
+            createBox();
+            
+            // 添加地板
+            floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(200, 200),
+                new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide })
+            );
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+            
+            // 添加控制器
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // 窗口大小调整事件
+            window.addEventListener('resize', onWindowResize);
+            
+            // 开始动画循环
+            animate();
+            
+            // 初始更新
+            updateAnimation();
+        }
+        
+        // 创建工人模型
+        function createWorker() {
+            // 头部
+            const headGeometry = new THREE.SphereGeometry(8, 32, 32);
+            const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 85;
+            
+            // 身体
+            const bodyGeometry = new THREE.BoxGeometry(20, 30, 10);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x3498db });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 55;
+            
+            // 左臂
+            const leftArmGeometry = new THREE.BoxGeometry(5, 25, 5);
+            const leftArmMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+            const leftArm = new THREE.Mesh(leftArmGeometry, leftArmMaterial);
+            leftArm.position.set(-12.5, 60, 0);
+            
+            // 右臂
+            const rightArmGeometry = new THREE.BoxGeometry(5, 25, 5);
+            const rightArmMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+            const rightArm = new THREE.Mesh(rightArmGeometry, rightArmMaterial);
+            rightArm.position.set(12.5, 60, 0);
+            
+            // 左腿
+            const leftLegGeometry = new THREE.BoxGeometry(7, 30, 7);
+            const leftLegMaterial = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+            const leftLeg = new THREE.Mesh(leftLegGeometry, leftLegMaterial);
+            leftLeg.position.set(-6, 20, 0);
+            
+            // 右腿
+            const rightLegGeometry = new THREE.BoxGeometry(7, 30, 7);
+            const rightLegMaterial = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+            const rightLeg = new THREE.Mesh(rightLegGeometry, rightLegMaterial);
+            rightLeg.position.set(6, 20, 0);
+            
+            // 创建工人组
+            worker = new THREE.Group();
+            worker.add(head);
+            worker.add(body);
+            worker.add(leftArm);
+            worker.add(rightArm);
+            worker.add(leftLeg);
+            worker.add(rightLeg);
+            
+            scene.add(worker);
+        }
+        
+        // 创建箱子
+        function createBox() {
+            const boxGeometry = new THREE.BoxGeometry(15, 15, 15);
+            const boxMaterial = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
+            box = new THREE.Mesh(boxGeometry, boxMaterial);
+            box.position.set(25, 7.5, 0);
+            
+            scene.add(box);
+        }
+        
+        // 更新动画
+        function updateAnimation() {
+            // 更新显示值
+            const horizontal = document.getElementById('anim-horizontal').value;
+            const vertical = document.getElementById('anim-vertical').value;
+            const asymmetry = document.getElementById('anim-asymmetry').value;
+            const weight = document.getElementById('anim-weight').value;
+            const posture = document.getElementById('anim-posture').value;
+            const coupling = document.getElementById('anim-coupling').value;
+            
+            document.getElementById('anim-horizontal-value').textContent = horizontal;
+            document.getElementById('anim-vertical-value').textContent = vertical;
+            document.getElementById('anim-asymmetry-value').textContent = asymmetry;
+            document.getElementById('anim-weight-value').textContent = weight;
+            
+            // 更新箱子位置
+            const horizontalPos = parseFloat(horizontal);
+            const verticalPos = parseFloat(vertical);
+            const angle = THREE.MathUtils.degToRad(parseFloat(asymmetry));
+            
+            box.position.x = horizontalPos * Math.cos(angle);
+            box.position.z = horizontalPos * Math.sin(angle);
+            box.position.y = verticalPos - 7.5;
+            
+            // 更新工人姿势
+            updateWorkerPosture(posture, verticalPos, angle);
+            
+            // 更新生物力学分析
+            updateBiomechanicalAnalysis(horizontalPos, verticalPos, angle, weight, coupling);
+        }
+        
+        // 更新工人姿势
+        function updateWorkerPosture(posture, verticalPos, angle) {
+            const workerBody = worker.children[1]; // 身体
+            const leftArm = worker.children[2]; // 左臂
+            const rightArm = worker.children[3]; // 右臂
+            const leftLeg = worker.children[4]; // 左腿
+            const rightLeg = worker.children[5]; // 右腿
+            
+            // 重置旋转
+            worker.rotation.y = 0;
+            workerBody.rotation.z = 0;
+            leftArm.rotation.z = 0;
+            rightArm.rotation.z = 0;
+            leftLeg.rotation.z = 0;
+            rightLeg.rotation.z = 0;
+            
+            // 设置不对称角度
+            worker.rotation.y = angle;
+            
+            // 根据姿势调整
+            switch(posture) {
+                case 'standing':
+                    // 站立姿势 - 默认
+                    worker.position.y = 0;
+                    leftLeg.position.y = 20;
+                    rightLeg.position.y = 20;
+                    break;
+                    
+                case 'squat':
+                    // 蹲姿
+                    worker.position.y = -20;
+                    leftLeg.position.y = 40;
+                    rightLeg.position.y = 40;
+                    leftLeg.rotation.z = -0.5;
+                    rightLeg.rotation.z = 0.5;
+                    break;
+                    
+                case 'kneeling':
+                    // 跪姿
+                    worker.position.y = -30;
+                    leftLeg.position.y = 50;
+                    rightLeg.position.y = 50;
+                    leftLeg.rotation.z = -0.8;
+                    rightLeg.rotation.z = 0.8;
+                    break;
+                    
+                case 'sitting':
+                    // 坐姿
+                    worker.position.y = -40;
+                    leftLeg.position.y = 60;
+                    rightLeg.position.y = 60;
+                    leftLeg.rotation.z = -1.0;
+                    rightLeg.rotation.z = 1.0;
+                    break;
+            }
+            
+            // 调整手臂姿势
+            const reachHeight = verticalPos - (85 + worker.position.y);
+            
+            if (reachHeight > 0) {
+                // 向上伸手
+                leftArm.rotation.z = -0.5;
+                rightArm.rotation.z = -0.5;
+            } else {
+                // 向下伸手
+                leftArm.rotation.z = 0.5;
+                rightArm.rotation.z = 0.5;
+            }
+            
+            // 身体前倾
+            if (parseFloat(document.getElementById('anim-horizontal').value) > 30) {
+                workerBody.rotation.z = -0.3;
+            }
+        }
+        
+        // 更新生物力学分析
+        function updateBiomechanicalAnalysis(horizontal, vertical, angle, weight, coupling) {
+            // 计算腰椎压力
+            let lumbarPressure = "低";
+            const lumbarForce = weight * (1 + (horizontal / 25)) * (1 + Math.abs(vertical - 75) / 50);
+            
+            if (lumbarForce < 1000) lumbarPressure = "低";
+            else if (lumbarForce < 2000) lumbarPressure = "中等";
+            else if (lumbarForce < 3000) lumbarPressure = "高";
+            else lumbarPressure = "极高";
+            
+            // 计算肩部负荷
+            let shoulderLoad = "低";
+            const shoulderForce = weight * (1 + (vertical > 110 ? (vertical - 110) / 20 : 0));
+            
+            if (shoulderForce < 5) shoulderLoad = "低";
+            else if (shoulderForce < 10) shoulderLoad = "中等";
+            else if (shoulderForce < 15) shoulderLoad = "高";
+            else shoulderLoad = "极高";
+            
+            // 膝关节角度
+            let kneeAngle = "正常";
+            const posture = document.getElementById('anim-posture').value;
+            
+            if (posture === 'squat') kneeAngle = "较大弯曲";
+            else if (posture === 'kneeling') kneeAngle = "跪姿";
+            else if (posture === 'sitting') kneeAngle = "坐姿弯曲";
+            
+            // 更新显示
+            document.getElementById('lumbar-pressure').textContent = lumbarPressure;
+            document.getElementById('shoulder-load').textContent = shoulderLoad;
+            document.getElementById('knee-angle').textContent = kneeAngle;
+        }
+        
+        // 窗口大小调整
+        function onWindowResize() {
+            const container = document.getElementById('animation-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+        
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // 初始化分析图表
+        function initAnalysisChart() {
+            const ctx = document.getElementById('analysisChart').getContext('2d');
+            
+            analysisChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'RWL (kg)',
+                        data: [],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '推荐重量限值 (kg)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '参数值'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '参数对RWL的影响'
+                        }
+                    }
+                }
+            });
+            
+            // 初始更新
+            updateAnalysis();
+        }
+        
+        // 更新分析图表
+        function updateAnalysis() {
+            const param = document.getElementById('analysis-param').value;
+            let labels = [];
+            let data = [];
+            let conclusion = "";
+            let xLabel = "";
+            
+            // 根据选择的参数生成数据
+            switch(param) {
+                case 'horizontal':
+                    xLabel = "水平距离 (cm)";
+                    for (let h = 15; h <= 60; h += 5) {
+                        labels.push(h);
+                        const HM = Math.min(25 / h, 1);
+                        data.push(23 * HM * 0.9 * 0.9 * 0.9 * 0.9 * 0.9); // 其他参数设为典型值
+                    }
+                    conclusion = "水平距离增加会显著降低推荐重量限值(RWL)。当水平距离超过50cm时，RWL会急剧下降。";
+                    break;
+                    
+                case 'vertical':
+                    xLabel = "垂直高度 (cm)";
+                    for (let v = 0; v <= 150; v += 10) {
+                        labels.push(v);
+                        const VM = 1 - (0.003 * Math.abs(v - 75));
+                        data.push(23 * 0.8 * VM * 0.9 * 0.9 * 0.9 * 0.9);
+                    }
+                    conclusion = "垂直高度在75cm左右时RWL最高，过高或过低都会降低RWL。地面提举和肩高提举风险较高。";
+                    break;
+                    
+                case 'distance':
+                    xLabel = "垂直位移 (cm)";
+                    for (let d = 10; d <= 200; d += 10) {
+                        labels.push(d);
+                        let DM = 0.82 + (4.5 / d);
+                        if (d > 175) DM = 0.82 + (4.5 / 175);
+                        data.push(23 * 0.8 * 0.9 * DM * 0.9 * 0.9 * 0.9);
+                    }
+                    conclusion = "垂直位移增加会降低RWL，但影响相对较小。位移超过175cm后影响不再变化。";
+                    break;
+                    
+                case 'frequency':
+                    xLabel = "提举频率 (次/分钟)";
+                    for (let f = 0; f <= 15; f += 1) {
+                        labels.push(f);
+                        let FM;
+                        if (f <= 0.2) FM = 1;
+                        else if (f <= 0.5) FM = 0.97;
+                        else if (f <= 1) FM = 0.94;
+                        else if (f <= 2) FM = 0.91;
+                        else if (f <= 3) FM = 0.88;
+                        else if (f <= 4) FM = 0.84;
+                        else if (f <= 5) FM = 0.8;
+                        else if (f <= 6) FM = 0.75;
+                        else if (f <= 7) FM = 0.7;
+                        else if (f <= 8) FM = 0.6;
+                        else if (f <= 9) FM = 0.52;
+                        else if (f <= 10) FM = 0.45;
+                        else if (f <= 11) FM = 0.41;
+                        else if (f <= 12) FM = 0.37;
+                        else if (f <= 13) FM = 0.34;
+                        else if (f <= 14) FM = 0.31;
+                        else if (f <= 15) FM = 0.28;
+                        else FM = 0;
+                        
+                        FM = FM * 0.75; // 8小时工作
+                        data.push(23 * 0.8 * 0.9 * 0.9 * 0.9 * FM * 0.9);
+                    }
+                    conclusion = "提举频率增加会显著降低RWL。频率超过5次/分钟时，RWL下降非常明显。";
+                    break;
+                    
+                case 'asymmetry':
+                    xLabel = "不对称角度 (度)";
+                    for (let a = 0; a <= 135; a += 5) {
+                        labels.push(a);
+                        const AM = 1 - (0.0032 * a);
+                        data.push(23 * 0.8 * 0.9 * 0.9 * AM * 0.9 * 0.9);
+                    }
+                    conclusion = "不对称角度增加会降低RWL。角度超过90度时影响更为显著。";
+                    break;
+            }
+            
+            // 更新图表
+            analysisChart.data.labels = labels;
+            analysisChart.data.datasets[0].data = data;
+            analysisChart.options.scales.x.title.text = xLabel;
+            analysisChart.update();
+            
+            // 更新结论
+            document.getElementById('analysis-conclusion').textContent = conclusion;
+        }
+    </script>
+</body>
+</html>
